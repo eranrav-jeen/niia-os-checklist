@@ -269,7 +269,7 @@ function App() {
         <div className="eyebrow">בדיקת עמידה בדרישות · NIIA OS SOW</div>
         <h1>צ׳ק־ליסט עמידה בדרישות המוצר</h1>
         <p className="sub">
-          לכל דרישה סמנו כן / לא / טרם ידוע. עבור "לא" ו"טרם ידוע" פרטו פעולה נדרשת, הערכת מאמץ ואחראי.
+          לכל דרישה סמנו כן / לא / לדיון. עבור "לא" ו"לדיון" פרטו פעולה נדרשת, הערכת מאמץ ואחראי.
         </p>
         <div className="progress-card">
           <div className="progress-top">
@@ -282,7 +282,7 @@ function App() {
           <div className="progress-breakdown">
             <span className="pill pill-yes">✓ עומד: {overall.yes}</span>
             <span className="pill pill-no">✗ לא עומד: {overall.no}</span>
-            <span className="pill pill-tbd">? טרם ידוע: {overall.tbd}</span>
+            <span className="pill pill-tbd">? לדיון: {overall.tbd}</span>
             <span className="pill pill-pending">⋯ טרם נבדק: {overall.total - overall.reviewed}</span>
           </div>
         </div>
@@ -296,7 +296,7 @@ function App() {
               checked={showGapsOnly}
               onChange={(e) => setShowGapsOnly(e.target.checked)}
             />
-            <span>הצג רק פערים ("לא" / "טרם ידוע")</span>
+            <span>הצג רק פערים ("לא" / "לדיון")</span>
           </label>
           <span className={"save-indicator " + saveState}>
             {saveState === "saving" ? "שומר…" : saveState === "saved" ? "נשמר ✓" : ""}
@@ -336,7 +336,7 @@ function App() {
                 <span className="cat-chevron">{isOpen ? "▾" : "◂"}</span>
                 <span className="cat-title">{cat.title}</span>
                 {stats.no > 0 && <span className="cat-gap-badge">{stats.no} פערים</span>}
-                {stats.tbd > 0 && <span className="cat-tbd-badge">{stats.tbd} טרם ידוע</span>}
+                {stats.tbd > 0 && <span className="cat-tbd-badge">{stats.tbd} לדיון</span>}
                 <span className="cat-count">{stats.reviewed}/{stats.total}</span>
                 <span className="cat-mini-track">
                   <span
@@ -372,7 +372,7 @@ function App() {
                               className={"yn-btn yn-tbd" + (entry.status === "tbd" ? " active" : "")}
                               onClick={() => setStatus(cat.id, idx, "tbd")}
                             >
-                              טרם ידוע
+                              לדיון
                             </button>
                           </div>
                         </div>
