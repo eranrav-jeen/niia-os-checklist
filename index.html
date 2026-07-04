@@ -221,18 +221,45 @@ function App() {
     setData({});
   };
 
-  const saveLocal = () => {
+  const saveLocal = async () => {
     const payload = {
       exportedAt: new Date().toISOString(),
       source: "niia-checklist",
       data
     };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const json = JSON.stringify(payload, null, 2);
+    const stamp = new Date().toISOString().slice(0, 10);
+    const filename = `niia-os-checklist-${stamp}.json`;
+
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [
+            {
+              description: "JSON file",
+              accept: { "application/json": [".json"] }
+            }
+          ]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(json);
+        await writable.close();
+        setImportMsg("הקובץ נשמר בהצלחה ✓");
+        setTimeout(() => setImportMsg(""), 3000);
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") return; // user cancelled the picker
+        // fall through to default download if the picker failed unexpectedly
+      }
+    }
+
+    // Fallback for browsers without the File System Access API (saves to default downloads location)
+    const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const stamp = new Date().toISOString().slice(0, 10);
     a.href = url;
-    a.download = `niia-os-checklist-${stamp}.json`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -253,6 +280,11 @@ function App() {
         const incoming = parsed && parsed.data ? parsed.data : parsed;
         if (typeof incoming !== "object" || incoming === null) throw new Error("bad format");
         setData(incoming);
+        // Cascade view: open all sections so the full picture is visible right after loading
+        const allOpen = {};
+        CATEGORIES.forEach((c) => { allOpen[c.id] = true; });
+        setOpenCats(allOpen);
+        setShowGapsOnly(false);
         setImportMsg("הקובץ נטען בהצלחה ✓");
       } catch (err) {
         setImportMsg("שגיאה בטעינת הקובץ — ודאו שזה קובץ ייצוא תקין");
@@ -261,6 +293,15 @@ function App() {
     };
     reader.readAsText(file);
     e.target.value = "";
+  };
+
+  const jumpToCategory = (catId) => {
+    setOpenCats((prev) => ({ ...prev, [catId]: true }));
+    setShowGapsOnly(false);
+    setTimeout(() => {
+      const el = document.getElementById("cat-" + catId);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
 
   return (
@@ -285,6 +326,45 @@ function App() {
             <span className="pill pill-tbd">? לדיון: {overall.tbd}</span>
             <span className="pill pill-pending">⋯ טרם נבדק: {overall.total - overall.reviewed}</span>
           </div>
+        </div>
+
+        <div className="section-summary">
+          {CATEGORIES.map((cat) => {
+            const s = catStats(cat);
+            const yesPct = s.reviewed ? Math.round((s.yes / s.reviewed) * 100) : 0;
+            const noPct = s.reviewed ? Math.round((s.no / s.reviewed) * 100) : 0;
+            const tbdPct = s.reviewed ? Math.max(0, 100 - yesPct - noPct) : 0;
+            const pendingCount = s.total - s.reviewed;
+            return (
+              <button
+                key={cat.id}
+                className="summary-card"
+                onClick={() => jumpToCategory(cat.id)}
+                title="לחצו כדי לעבור לסעיף"
+              >
+                <div className="summary-title">{cat.title}</div>
+                {s.reviewed > 0 ? (
+                  <>
+                    <div className="summary-stack">
+                      {yesPct > 0 && <span className="seg seg-yes" style={{ width: yesPct + "%" }} />}
+                      {noPct > 0 && <span className="seg seg-no" style={{ width: noPct + "%" }} />}
+                      {tbdPct > 0 && <span className="seg seg-tbd" style={{ width: tbdPct + "%" }} />}
+                    </div>
+                    <div className="summary-figures">
+                      <span className="fig fig-yes">{yesPct}% עומד</span>
+                      <span className="fig fig-no">{noPct}% לא עומד</span>
+                      {tbdPct > 0 && <span className="fig fig-tbd">{tbdPct}% לדיון</span>}
+                    </div>
+                  </>
+                ) : (
+                  <div className="summary-empty">טרם נבדק</div>
+                )}
+                {pendingCount > 0 && s.reviewed > 0 && (
+                  <div className="summary-pending">{pendingCount} סעיפים ללא בדיקה</div>
+                )}
+              </button>
+            );
+          })}
         </div>
       </header>
 
@@ -318,7 +398,7 @@ function App() {
       {importMsg && <div className="import-msg">{importMsg}</div>}
 
       <main>
-        {CATEGORIES.map((cat) => {
+        {CATEGORIES.map((cat, catIndex) => {
           const stats = catStats(cat);
           const visibleIdx = cat.items
             .map((_, i) => i)
@@ -331,7 +411,7 @@ function App() {
           const isOpen = openCats[cat.id] || showGapsOnly;
           const complete = stats.reviewed === stats.total && stats.no === 0 && stats.tbd === 0;
           return (
-            <section key={cat.id} className={"cat-card" + (complete ? " complete" : "")}>
+            <section key={cat.id} id={"cat-" + cat.id} className={"cat-card" + (complete ? " complete" : "")}>
               <button className="cat-header" onClick={() => toggleCat(cat.id)}>
                 <span className="cat-chevron">{isOpen ? "▾" : "◂"}</span>
                 <span className="cat-title">{cat.title}</span>
@@ -346,7 +426,7 @@ function App() {
                 </span>
               </button>
               {isOpen && (
-                <ul className="item-list">
+                <ul className="item-list cascade-in" style={{ animationDelay: (catIndex * 60) + "ms" }}>
                   {visibleIdx.map((idx) => {
                     const text = cat.items[idx];
                     const k = itemKey(cat.id, idx);
@@ -507,7 +587,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
   }
 
   .hero {
-    max-width: 760px;
+    max-width: 860px;
     margin: 0 auto 28px;
     text-align: center;
   }
@@ -594,8 +674,73 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
   .pill-tbd { color: #f0cd7a; }
   .pill-pending { color: #cdd9e5; }
 
+  .section-summary {
+    margin-top: 18px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+    text-align: right;
+  }
+
+  .summary-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    text-align: right;
+    cursor: pointer;
+    font-family: var(--font-body);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: border-color 0.15s ease, transform 0.1s ease;
+  }
+  .summary-card:hover {
+    border-color: var(--blue-accent);
+    transform: translateY(-1px);
+  }
+
+  .summary-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy-950);
+    line-height: 1.35;
+  }
+
+  .summary-stack {
+    display: flex;
+    height: 7px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--sand-100);
+  }
+  .seg { display: block; height: 100%; }
+  .seg-yes { background: var(--green-600); }
+  .seg-no { background: #c0392b; }
+  .seg-tbd { background: var(--gold-500); }
+
+  .summary-figures {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+    font-size: 11.5px;
+  }
+  .fig-yes { color: var(--green-600); font-weight: 700; }
+  .fig-no { color: #c0392b; font-weight: 700; }
+  .fig-tbd { color: #96731b; font-weight: 700; }
+
+  .summary-empty {
+    font-size: 12.5px;
+    color: var(--ink-500);
+  }
+
+  .summary-pending {
+    font-size: 11px;
+    color: var(--ink-500);
+  }
+
   .toolbar {
-    max-width: 760px;
+    max-width: 860px;
     margin: 0 auto 10px;
     display: flex;
     align-items: center;
@@ -628,7 +773,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
   }
 
   .import-msg {
-    max-width: 760px;
+    max-width: 860px;
     margin: 0 auto 10px;
     font-size: 13px;
     color: var(--green-600);
@@ -661,7 +806,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
   }
 
   main {
-    max-width: 760px;
+    max-width: 860px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
@@ -748,6 +893,19 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
     margin: 0;
     padding: 0 16px 14px;
     border-top: 1px solid var(--border);
+  }
+
+  .cascade-in {
+    animation: cascadeIn 0.35s ease both;
+  }
+
+  @keyframes cascadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cascade-in { animation: none; }
   }
 
   .item {
@@ -892,7 +1050,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(<App />);
   }
 
   footer {
-    max-width: 760px;
+    max-width: 860px;
     margin: 30px auto 0;
     text-align: center;
     font-size: 12.5px;
