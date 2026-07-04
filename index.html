@@ -1,0 +1,911 @@
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo } = React;
+
+const CATEGORIES = [
+  {
+    id: "principles",
+    title: "עקרונות יסוד מחייבים",
+    items: [
+      "המערכת מתוכננת סביב יכולת AI אמיתית (לא שכבת צ׳אט בלבד) — AI-native מלא",
+      "ניתן להעמיד MVP עובד תוך 21 ימי עבודה — מוצר לפני מסמכים",
+      "תהליך עבודה צמוד לקוח עם דמו, בדיקות ומשוב תכופים — Product Co-Creation",
+      "החלטות, Gates ודירוגים קריטיים מחייבים אישור ותיעוד אנושי — Human-in-the-loop",
+      "המתודולוגיה מתחילה מבעיית חיים לפני פתרון טכנולוגי, עם אפשרות reverse engineering — Problem-first",
+      "ניתן להחליף ספק פיתוח, ענן או LLM ללא בנייה מחדש — ניידות ובעלות",
+      "כל רכיבי הקוד, ההגדרות, התיעוד, הפרומפטים והסוכנים בבעלות מלאה של הלקוח",
+      "המערכת עומדת בהנחיות השימוש האחראי בבינה מלאכותית במגזר הציבורי"
+    ]
+  },
+  {
+    id: "mvp",
+    title: "רכיבי MVP נדרשים",
+    items: [
+      "Knowledge & Evidence Hub — העלאת מסמכים, ניהול מקורות, חיפוש סמנטי, RAG, סיכום וחילוץ ישויות",
+      "Challenge & Mission Workspace — ניהול אתגרים לאומיים, תחומי מיקוד ובעלי עניין",
+      "Problem Discovery Assistant — חילוץ בעיות חיים, אוכלוסיות מושפעות ושורשי כשל",
+      "AI Fit Engine — בדיקת התאמה ל-AI, חלופות שאינן AI, פערי דאטה ותנאי סף",
+      "Project Card Generator — הפקת כרטיס פרויקט, One Pager, Decision Brief ודוח Gate",
+      "Portfolio Dashboard — תצוגת פרויקטים, Gates, סטטוס, חסמים וסיכונים",
+      "AI Copilot Layer — סיכום, ניתוח, השוואה, ניסוח והכנת חומרי ועדה",
+      "Organizational Memory — שמירת תוצרים, תבניות, החלטות ו-lessons learned"
+    ]
+  },
+  {
+    id: "functional",
+    title: "דרישות פונקציונליות מפורטות",
+    items: [
+      "ניהול ידע: תיוג, גרסאות, מקורות, אמינות, תקצירים וחיפוש סמנטי",
+      "חקר בעיות: כרטיס בעיית חיים, אוכלוסיות מושפעות, שורשי כשל ושאלות השלמה",
+      "התאמה ל-AI: ניתוח סוג AI מתאים, תנאי סף, חלופות פשוטות וסיכון",
+      "כרטיס פרויקט מובנה הכולל בעיה, פתרון, דאטה, מדדים וסיכונים",
+      "פורטפוליו ו-Gates: ניהול שלבים intake→scale עם scoring ונימוקים",
+      "אימפקט: הצעת מדדים, baseline ותועלות ציבוריות/כלכליות/חברתיות",
+      "סיכונים ואחריותיות: סיווג סיכון, פרטיות, הטיות, explainability ו-audit",
+      "רלוונטיות מתמדת: התראות על חסמים, כפילות וצורך ב-pivot",
+      "ייצוא תוצרים: Word, PDF, Excel/CSV, One Pager ודוחות SOW/RFP",
+      "מדידת שימוש פנימי: משתמשים פעילים, שעות שנחסכו והמלצות שהתקבלו"
+    ]
+  },
+  {
+    id: "agents",
+    title: "AI Workforce — סוכנים ייעודיים",
+    items: [
+      "סוכן חקר תחום — סורק, מסכם ומזהה מגמות וחוסרים",
+      "סוכן סיכום מסמכים — מחלץ ישויות, מדדים ורגולציה",
+      "סוכן בעיות חיים — מחלץ בעיות מתוך ידע גולמי ותהליכי עבודה",
+      "סוכן AI Fit — בודק סוגי AI רלוונטיים וחלופות לא-AI",
+      "סוכן אימפקט — מציע מדדים, baseline ותועלות",
+      "סוכן סיכונים — מזהה סיכונים אתיים, משפטיים ואבטחתיים",
+      "סוכן ועדה — מכין תקצירי החלטה והמלצות Gate",
+      "סוכן זיכרון ארגוני — מתייג ושומר ידע לשימוש חוזר",
+      "סוכן השוואה בינלאומית — איתור מודלים מקבילים בעולם",
+      "סוכן פרויקט תקוע — זיהוי סטגנציה וחסמי התקדמות"
+    ]
+  },
+  {
+    id: "finops",
+    title: "AI FinOps",
+    items: [
+      "Cost Visibility — עלות לפי משתמש, פרויקט, מודול, סוכן ומודל",
+      "Budget Controls — תקציבים חודשיים/שנתיים לפי משתמש ופרויקט",
+      "Usage Policies — quotas, rate limits ואישורי מנהל לפעולות יקרות",
+      "Dynamic Model Routing — בחירת מודל לפי מורכבות המשימה",
+      "Token Efficiency — chunking, caching, summarization-first ו-batching",
+      "Cost Alerts — התראות ב-50%, 75%, 90% ו-100% מהתקציב בזמן אמת",
+      "Hard Limits — עצירת פעולה או הורדת מודל בעת חריגה ממדיניות",
+      "Cost Forecasting — חיזוי עלות לפי שימוש ופרויקטים פעילים",
+      "TCO Dashboard — עלות כוללת של LLM, תשתיות, אחסון ורישיונות"
+    ]
+  },
+  {
+    id: "observability",
+    title: "AI Observability ואיכות",
+    items: [
+      "Prompt monitoring — גרסאות פרומפטים, הצלחות וכישלונות",
+      "Agent monitoring — פעולות, זמן ריצה, עלות ואישור אנושי",
+      "Source coverage — האם התשובה מבוססת מקורות זמינים או השערה",
+      "Hallucination monitoring — זיהוי תשובות ללא מקור או סתירות",
+      "Quality evaluation — מדדי איכות ומשוב משתמשים",
+      "Adoption analytics — משתמשים פעילים ותהליכים שנחסכו",
+      "Audit trail — תיעוד מלא של מי, מה, איזה מודל ומה אושר"
+    ]
+  },
+  {
+    id: "acceptance",
+    title: "קריטריוני קבלה ל-MVP",
+    items: [
+      "עובד בפועל — משתמש יכול להעלות מסמך, לשאול ולקבל תשובה עם מקור",
+      "מתודולוגי — תמיכה בשרשרת אתגר→תחום→בעיה→AI Fit→כרטיס→Gate",
+      "AI-native — לפחות 4 יכולות AI עובדות בפועל",
+      "FinOps — הצגת שימוש ועלות בסיסיים לפי משתמש/פעולה/מודל",
+      "Audit — תיעוד פעולה בסיסי: משתמש, זמן, פעולה, מודל ותוצר",
+      "ניידות — קיימים Dockerfiles/סקריפטי פריסה ותיעוד הקמה מחדש",
+      "אבטחה בסיסית — הרשאות, התחברות מאובטחת והצפנת תעבורה",
+      "ייצוא — לפחות שני פורמטי ייצוא עובדים (Word/PDF או PDF/CSV)",
+      "שימושיות — מסע משתמש שלם ללא תלות במפתח"
+    ]
+  }
+];
+
+const TOTAL_ITEMS = CATEGORIES.reduce((s, c) => s + c.items.length, 0);
+
+function itemKey(catId, idx) {
+  return `${catId}:${idx}`;
+}
+
+function emptyEntry() {
+  return { status: null, note: "", action: "", effort: "", owner: "" };
+}
+
+function App() {
+  // data[key] = { status: 'yes' | 'no' | 'tbd' | null, note, action, effort, owner }
+  const [data, setData] = useState({});
+  const [openCats, setOpenCats] = useState(() => {
+    const o = {};
+    CATEGORIES.forEach((c, i) => (o[c.id] = i === 0));
+    return o;
+  });
+  const [loaded, setLoaded] = useState(false);
+  const [saveState, setSaveState] = useState("idle"); // idle | saving | saved
+  const [showGapsOnly, setShowGapsOnly] = useState(false);
+  const fileInputRef = React.useRef(null);
+  const [importMsg, setImportMsg] = useState("");
+
+  useEffect(() => {
+    async function load() {
+      let d = {};
+      try {
+        const result = await window.storage.get("niia-checklist:data");
+        if (result && result.value) {
+          d = JSON.parse(result.value);
+        }
+      } catch (e) {
+        // no saved state yet
+      }
+      setData(d);
+      setLoaded(true);
+    }
+    load();
+  }, []);
+
+  useEffect(() => {
+    if (!loaded) return;
+    setSaveState("saving");
+    const t = setTimeout(async () => {
+      try {
+        await window.storage.set("niia-checklist:data", JSON.stringify(data));
+        setSaveState("saved");
+      } catch (e) {
+        setSaveState("idle");
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [data, loaded]);
+
+  const getEntry = (catId, idx) => data[itemKey(catId, idx)] || emptyEntry();
+
+  const updateEntry = (catId, idx, patch) => {
+    const k = itemKey(catId, idx);
+    setData((prev) => ({
+      ...prev,
+      [k]: { ...emptyEntry(), ...prev[k], ...patch }
+    }));
+  };
+
+  const setStatus = (catId, idx, status) => {
+    const current = getEntry(catId, idx);
+    // toggle off if clicking the same status again
+    const next = current.status === status ? null : status;
+    updateEntry(catId, idx, { status: next });
+  };
+
+  const toggleCat = (catId) => {
+    setOpenCats((prev) => ({ ...prev, [catId]: !prev[catId] }));
+  };
+
+  const catStats = (cat) => {
+    let yes = 0, no = 0, tbd = 0, reviewed = 0;
+    cat.items.forEach((_, i) => {
+      const e = getEntry(cat.id, i);
+      if (e.status === "yes") { yes++; reviewed++; }
+      if (e.status === "no") { no++; reviewed++; }
+      if (e.status === "tbd") { tbd++; reviewed++; }
+    });
+    return { yes, no, tbd, reviewed, total: cat.items.length };
+  };
+
+  const overall = useMemo(() => {
+    let yes = 0, no = 0, tbd = 0, reviewed = 0;
+    CATEGORIES.forEach((cat) => {
+      cat.items.forEach((_, i) => {
+        const e = getEntry(cat.id, i);
+        if (e.status === "yes") { yes++; reviewed++; }
+        if (e.status === "no") { no++; reviewed++; }
+        if (e.status === "tbd") { tbd++; reviewed++; }
+      });
+    });
+    return {
+      yes, no, tbd, reviewed,
+      total: TOTAL_ITEMS,
+      pct: Math.round((reviewed / TOTAL_ITEMS) * 100),
+      yesPct: Math.round((yes / TOTAL_ITEMS) * 100)
+    };
+  }, [data]);
+
+  const resetAll = async () => {
+    if (!window.confirm("לאפס את כל הסימונים, ההערות ופעולות הנדרשות?")) return;
+    setData({});
+  };
+
+  const saveLocal = () => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      source: "niia-checklist",
+      data
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `niia-os-checklist-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const triggerLoad = () => {
+    if (fileInputRef.current) fileInputRef.current.click();
+  };
+
+  const handleFile = (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        const incoming = parsed && parsed.data ? parsed.data : parsed;
+        if (typeof incoming !== "object" || incoming === null) throw new Error("bad format");
+        setData(incoming);
+        setImportMsg("הקובץ נטען בהצלחה ✓");
+      } catch (err) {
+        setImportMsg("שגיאה בטעינת הקובץ — ודאו שזה קובץ ייצוא תקין");
+      }
+      setTimeout(() => setImportMsg(""), 3500);
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
+  return (
+    <div className="wrap" dir="rtl">
+      <header className="hero">
+        <div className="eyebrow">בדיקת עמידה בדרישות · NIIA OS SOW</div>
+        <h1>צ׳ק־ליסט עמידה בדרישות המוצר</h1>
+        <p className="sub">
+          לכל דרישה סמנו כן / לא / טרם ידוע. עבור "לא" ו"טרם ידוע" פרטו פעולה נדרשת, הערכת מאמץ ואחראי.
+        </p>
+        <div className="progress-card">
+          <div className="progress-top">
+            <span className="progress-num">{overall.pct}%</span>
+            <span className="progress-label">{overall.reviewed} מתוך {overall.total} נבדקו</span>
+          </div>
+          <div className="bar-track">
+            <div className="bar-fill" style={{ width: overall.pct + "%" }} />
+          </div>
+          <div className="progress-breakdown">
+            <span className="pill pill-yes">✓ עומד: {overall.yes}</span>
+            <span className="pill pill-no">✗ לא עומד: {overall.no}</span>
+            <span className="pill pill-tbd">? טרם ידוע: {overall.tbd}</span>
+            <span className="pill pill-pending">⋯ טרם נבדק: {overall.total - overall.reviewed}</span>
+          </div>
+        </div>
+      </header>
+
+      <div className="toolbar">
+        <div className="toolbar-right">
+          <label className="filter-toggle">
+            <input
+              type="checkbox"
+              checked={showGapsOnly}
+              onChange={(e) => setShowGapsOnly(e.target.checked)}
+            />
+            <span>הצג רק פערים ("לא" / "טרם ידוע")</span>
+          </label>
+          <span className={"save-indicator " + saveState}>
+            {saveState === "saving" ? "שומר…" : saveState === "saved" ? "נשמר ✓" : ""}
+          </span>
+        </div>
+        <div className="toolbar-left">
+          <button className="ghost-btn" onClick={saveLocal}>שמירה לקובץ</button>
+          <button className="ghost-btn" onClick={triggerLoad}>טעינת קובץ</button>
+          <input
+            type="file"
+            accept="application/json"
+            ref={fileInputRef}
+            onChange={handleFile}
+            style={{ display: "none" }}
+          />
+          <button className="reset-btn" onClick={resetAll}>איפוס הכל</button>
+        </div>
+      </div>
+      {importMsg && <div className="import-msg">{importMsg}</div>}
+
+      <main>
+        {CATEGORIES.map((cat) => {
+          const stats = catStats(cat);
+          const visibleIdx = cat.items
+            .map((_, i) => i)
+            .filter((i) => {
+              if (!showGapsOnly) return true;
+              const s = getEntry(cat.id, i).status;
+              return s === "no" || s === "tbd";
+            });
+          if (showGapsOnly && visibleIdx.length === 0) return null;
+          const isOpen = openCats[cat.id] || showGapsOnly;
+          const complete = stats.reviewed === stats.total && stats.no === 0 && stats.tbd === 0;
+          return (
+            <section key={cat.id} className={"cat-card" + (complete ? " complete" : "")}>
+              <button className="cat-header" onClick={() => toggleCat(cat.id)}>
+                <span className="cat-chevron">{isOpen ? "▾" : "◂"}</span>
+                <span className="cat-title">{cat.title}</span>
+                {stats.no > 0 && <span className="cat-gap-badge">{stats.no} פערים</span>}
+                {stats.tbd > 0 && <span className="cat-tbd-badge">{stats.tbd} טרם ידוע</span>}
+                <span className="cat-count">{stats.reviewed}/{stats.total}</span>
+                <span className="cat-mini-track">
+                  <span
+                    className="cat-mini-fill"
+                    style={{ width: (stats.reviewed / stats.total) * 100 + "%" }}
+                  />
+                </span>
+              </button>
+              {isOpen && (
+                <ul className="item-list">
+                  {visibleIdx.map((idx) => {
+                    const text = cat.items[idx];
+                    const k = itemKey(cat.id, idx);
+                    const entry = getEntry(cat.id, idx);
+                    return (
+                      <li key={k} className={"item status-" + (entry.status || "pending")}>
+                        <div className="item-top">
+                          <span className="item-text">{text}</span>
+                          <div className="yn-group">
+                            <button
+                              className={"yn-btn yn-yes" + (entry.status === "yes" ? " active" : "")}
+                              onClick={() => setStatus(cat.id, idx, "yes")}
+                            >
+                              כן
+                            </button>
+                            <button
+                              className={"yn-btn yn-no" + (entry.status === "no" ? " active" : "")}
+                              onClick={() => setStatus(cat.id, idx, "no")}
+                            >
+                              לא
+                            </button>
+                            <button
+                              className={"yn-btn yn-tbd" + (entry.status === "tbd" ? " active" : "")}
+                              onClick={() => setStatus(cat.id, idx, "tbd")}
+                            >
+                              טרם ידוע
+                            </button>
+                          </div>
+                        </div>
+
+                        {entry.status === "no" && (
+                          <div className="gap-fields fields-no">
+                            <div className="gap-field">
+                              <label>פעולה נדרשת</label>
+                              <textarea
+                                rows="2"
+                                placeholder="מה צריך לעשות כדי לסגור את הפער?"
+                                value={entry.action}
+                                onChange={(e) => updateEntry(cat.id, idx, { action: e.target.value })}
+                              />
+                            </div>
+                            <div className="gap-field-row">
+                              <div className="gap-field">
+                                <label>הערכת מאמץ</label>
+                                <input
+                                  type="text"
+                                  placeholder="לדוגמה: 3 ימי פיתוח"
+                                  value={entry.effort}
+                                  onChange={(e) => updateEntry(cat.id, idx, { effort: e.target.value })}
+                                />
+                              </div>
+                              <div className="gap-field">
+                                <label>אחראי</label>
+                                <input
+                                  type="text"
+                                  placeholder="שם האחראי לביצוע"
+                                  value={entry.owner}
+                                  onChange={(e) => updateEntry(cat.id, idx, { owner: e.target.value })}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {entry.status === "tbd" && (
+                          <div className="gap-fields fields-tbd">
+                            <div className="gap-field">
+                              <label>פעולה נדרשת — בירור נוסף</label>
+                              <textarea
+                                rows="2"
+                                placeholder="מה יש לבדוק / להשלים כדי לדעת אם הדרישה מתקיימת?"
+                                value={entry.action}
+                                onChange={(e) => updateEntry(cat.id, idx, { action: e.target.value })}
+                              />
+                            </div>
+                            <div className="gap-field-row">
+                              <div className="gap-field">
+                                <label>הערכת מאמץ לבירור</label>
+                                <input
+                                  type="text"
+                                  placeholder="לדוגמה: שעה בדיקה מול הצוות"
+                                  value={entry.effort}
+                                  onChange={(e) => updateEntry(cat.id, idx, { effort: e.target.value })}
+                                />
+                              </div>
+                              <div className="gap-field">
+                                <label>אחראי לבירור</label>
+                                <input
+                                  type="text"
+                                  placeholder="שם האחראי לבדיקה"
+                                  value={entry.owner}
+                                  onChange={(e) => updateEntry(cat.id, idx, { owner: e.target.value })}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <input
+                          className="note-input"
+                          type="text"
+                          placeholder="הערה / הפניה לתיעוד (אופציונלי)"
+                          value={entry.note}
+                          onChange={(e) => updateEntry(cat.id, idx, { note: e.target.value })}
+                        />
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </section>
+          );
+        })}
+      </main>
+
+      <footer>
+        <p>מבוסס על כתב ההתקשרות (SOW) להקמת NIIA OS · הנתונים נשמרים באחסון האישי שלך, וניתנים לייצוא/ייבוא כקובץ.</p>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+
+<style>
+  :root {
+    --navy-950: #0b1a2e;
+    --navy-900: #10233d;
+    --navy-800: #17324f;
+    --navy-700: #21456b;
+    --blue-500: #2f6fb0;
+    --blue-accent: #3d8bd4;
+    --sand-100: #f4f2ec;
+    --sand-050: #faf9f6;
+    --gold-500: #c79a45;
+    --green-600: #2f8f5b;
+    --ink-700: #22303f;
+    --ink-500: #5a6b7b;
+    --border: #dde3e8;
+    --radius: 10px;
+    --font-display: "Frank Ruhl Libre", "David Libre", Georgia, serif;
+    --font-body: "Assistant", "Segoe UI", Arial, sans-serif;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700&family=Assistant:wght@400;500;600;700&display=swap');
+
+  * { box-sizing: border-box; }
+
+  body { margin: 0; }
+
+  .wrap {
+    font-family: var(--font-body);
+    background: var(--sand-050);
+    color: var(--ink-700);
+    min-height: 100%;
+    padding: 28px 20px 60px;
+  }
+
+  .hero {
+    max-width: 760px;
+    margin: 0 auto 28px;
+    text-align: center;
+  }
+
+  .eyebrow {
+    font-size: 13px;
+    letter-spacing: 0.03em;
+    color: var(--gold-500);
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: 34px;
+    color: var(--navy-950);
+    margin: 0 0 10px;
+    line-height: 1.25;
+  }
+
+  .sub {
+    color: var(--ink-500);
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0 0 22px;
+  }
+
+  .progress-card {
+    background: var(--navy-950);
+    border-radius: 14px;
+    padding: 18px 22px;
+    color: #fff;
+  }
+
+  .progress-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .progress-num {
+    font-family: var(--font-display);
+    font-size: 30px;
+    color: var(--gold-500);
+    font-weight: 700;
+  }
+
+  .progress-label {
+    font-size: 14px;
+    color: #cdd9e5;
+  }
+
+  .bar-track {
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.12);
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue-accent), var(--gold-500));
+    border-radius: 999px;
+    transition: width 0.35s ease;
+  }
+
+  .progress-breakdown {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .pill {
+    font-size: 12.5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.1);
+    color: #dbe6f0;
+  }
+  .pill-yes { color: #8fe0b4; }
+  .pill-no { color: #f3a7a2; }
+  .pill-tbd { color: #f0cd7a; }
+  .pill-pending { color: #cdd9e5; }
+
+  .toolbar {
+    max-width: 760px;
+    margin: 0 auto 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .toolbar-right, .toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13.5px;
+    color: var(--navy-900);
+    cursor: pointer;
+    user-select: none;
+  }
+  .filter-toggle input {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--blue-accent);
+    cursor: pointer;
+  }
+
+  .import-msg {
+    max-width: 760px;
+    margin: 0 auto 10px;
+    font-size: 13px;
+    color: var(--green-600);
+    text-align: center;
+  }
+
+  .save-indicator {
+    font-size: 13px;
+    color: var(--ink-500);
+    min-height: 18px;
+  }
+  .save-indicator.saved { color: var(--green-600); }
+
+  .ghost-btn, .reset-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--ink-500);
+    font-family: var(--font-body);
+    font-size: 13px;
+    padding: 7px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .ghost-btn:hover, .reset-btn:hover {
+    border-color: var(--navy-700);
+    color: var(--navy-900);
+  }
+  .ghost-btn {
+    background: #fff;
+  }
+
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .cat-card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .cat-card.complete {
+    border-color: var(--green-600);
+  }
+
+  .cat-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-body);
+    text-align: right;
+  }
+
+  .cat-chevron {
+    color: var(--blue-500);
+    font-size: 14px;
+    width: 14px;
+  }
+
+  .cat-title {
+    font-weight: 700;
+    color: var(--navy-950);
+    font-size: 16px;
+    flex: 1;
+  }
+
+  .cat-count {
+    font-size: 13px;
+    color: var(--ink-500);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cat-gap-badge {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #b3392f;
+    background: #fbe4e1;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  .cat-tbd-badge {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #96731b;
+    background: #faedd0;
+    padding: 2px 8px;
+    border-radius: 999px;
+  }
+
+  .cat-mini-track {
+    width: 60px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--sand-100);
+    overflow: hidden;
+    display: inline-block;
+  }
+  .cat-mini-fill {
+    height: 100%;
+    background: var(--blue-accent);
+    border-radius: 999px;
+  }
+  .cat-card.complete .cat-mini-fill { background: var(--green-600); }
+
+  .item-list {
+    list-style: none;
+    margin: 0;
+    padding: 0 16px 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .item {
+    padding: 12px 0;
+    border-bottom: 1px solid #eef1f4;
+  }
+  .item:last-child { border-bottom: none; }
+
+  .item-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+  }
+
+  .item-text {
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--ink-700);
+    flex: 1;
+  }
+
+  .item.status-yes .item-text {
+    color: var(--ink-500);
+  }
+  .item.status-no .item-text {
+    color: var(--ink-700);
+    font-weight: 600;
+  }
+  .item.status-tbd .item-text {
+    color: var(--ink-700);
+    font-weight: 600;
+  }
+
+  .yn-group {
+    display: flex;
+    gap: 6px;
+    flex: none;
+  }
+
+  .yn-btn {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 7px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    color: var(--ink-500);
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  .yn-btn:hover {
+    border-color: var(--blue-accent);
+  }
+  .yn-yes.active {
+    background: var(--green-600);
+    border-color: var(--green-600);
+    color: #fff;
+  }
+  .yn-no.active {
+    background: #c0392b;
+    border-color: #c0392b;
+    color: #fff;
+  }
+  .yn-tbd.active {
+    background: var(--gold-500);
+    border-color: var(--gold-500);
+    color: #fff;
+  }
+
+  .gap-fields {
+    margin-top: 10px;
+    padding: 12px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .fields-no {
+    background: #fdf3f2;
+    border: 1px solid #f3d9d6;
+  }
+  .fields-no .gap-field label { color: #a3392f; }
+  .fields-no textarea:focus, .fields-no input[type="text"]:focus { border-color: #c0392b; }
+
+  .fields-tbd {
+    background: #fdf7e9;
+    border: 1px solid #f0dfae;
+  }
+  .fields-tbd .gap-field label { color: #96731b; }
+  .fields-tbd textarea:focus, .fields-tbd input[type="text"]:focus { border-color: var(--gold-500); }
+
+  .gap-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .gap-field textarea,
+  .gap-field input[type="text"] {
+    width: 100%;
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    color: var(--ink-700);
+    resize: vertical;
+  }
+  .gap-field textarea:focus,
+  .gap-field input[type="text"]:focus {
+    outline: none;
+  }
+
+  .gap-field-row {
+    display: flex;
+    gap: 10px;
+  }
+  .gap-field-row .gap-field {
+    flex: 1;
+  }
+
+  .note-input {
+    width: 100%;
+    margin-top: 8px;
+    padding: 6px 10px;
+    font-family: var(--font-body);
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--sand-050);
+    color: var(--ink-700);
+  }
+  .note-input:focus {
+    outline: none;
+    border-color: var(--blue-accent);
+    background: #fff;
+  }
+
+  footer {
+    max-width: 760px;
+    margin: 30px auto 0;
+    text-align: center;
+    font-size: 12.5px;
+    color: var(--ink-500);
+  }
+
+  @media (max-width: 480px) {
+    h1 { font-size: 26px; }
+    .progress-num { font-size: 24px; }
+    .item-top { flex-direction: column; align-items: stretch; }
+    .yn-group { align-self: flex-start; }
+    .gap-field-row { flex-direction: column; }
+    .toolbar { flex-direction: column; align-items: stretch; }
+    .toolbar-right, .toolbar-left { justify-content: space-between; }
+  }
+</style>
